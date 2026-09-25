@@ -223,4 +223,20 @@ const todayQuick=document.querySelector('.quick[data-go="today"]');
 if(todayQuick)todayQuick.onclick=()=>{document.getElementById('todayLessonsCard')?.scrollIntoView({behavior:'smooth',block:'start'})};
 
 renderAll();setInterval(()=>{updateNext();checkAlerts()},1000);
+ // Android rington tizimi
+window.androidRingtoneSelected = function(){
+    localStorage.setItem('dj_tone','custom');
+    if($('tone')) $('tone').value='custom';
+    alert('Rington Android tizimiga saqlandi va tanlandi.');
+};
+
+if($('ringtoneFile')){
+    $('ringtoneFile').onclick = function(e){
+        if(window.AndroidApp && typeof AndroidApp.chooseRingtone === 'function'){
+            e.preventDefault();
+            AndroidApp.chooseRingtone();
+            return false;
+        }
+    };
+}
 </script></body></html>
