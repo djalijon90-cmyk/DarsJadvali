@@ -184,7 +184,7 @@ let savedExcelName=localStorage.getItem('dj_excel_name');if(savedExcelName)$('ex
 $('enableAlerts').onclick=async()=>{if(scheduleAndroidLessons()){alert('Android eslatmalari yoqildi. Bugungi darslar uchun signal rejalashtirildi.');return;}if('Notification'in window){let p=await Notification.requestPermission();alert(p==='granted'?'Bildirishnomalar yoqildi.':'Bildirishnomaga ruxsat berilmadi.')}else alert('Bildirishnoma qo‘llab-quvvatlanmadi.')};$('testAlarm').onclick=tone;$('stopAlarm').onclick=stopTone;
 $('ringtoneFile').onchange=async e=>{let f=e.target.files&&e.target.files[0];if(f){await saveCustomRingtone(f);alert('Rington saqlandi va tanlandi.')}};
 $('clearCustomTone').onclick=async()=>{if(confirm('Saqlangan telefon ringtonini o‘chirasizmi?')){await clearCustomRingtone();alert('Tanlangan rington o‘chirildi.')}};
-$('testSettingsTone').onclick=tone;
+$('testSettingsTone').onclick=()=>{if(window.AndroidApp&&typeof AndroidApp.testRingtone==='function'){AndroidApp.testRingtone();}else{tone();}};
 if($('stopSettingsTone'))$('stopSettingsTone').onclick=stopTone;
 $('volume').oninput=()=>{$('volumeText').textContent=Math.round(+$('volume').value*100)+'%'};
 $('saveSettings').onclick=()=>{localStorage.setItem('dj_before',$('remindBefore').value);localStorage.setItem('dj_tone',$('tone').value);localStorage.setItem('dj_volume',$('volume').value);alert('Sozlamalar saqlandi.')};
