@@ -290,12 +290,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 @JavascriptInterface
-fun testRingtone() {
+fun testRingtone(tone: String) {
     try {
+        val soundRes = when (tone) {
+            "modern_alarm_2" -> R.raw.modern_alarm_2
+            else -> R.raw.school_bell
+        }
+
         val player = android.media.MediaPlayer.create(
             this@MainActivity,
-            R.raw.school_bell
+            soundRes
         )
+
         player?.setOnCompletionListener { it.release() }
         player?.start()
     } catch (_: Exception) {
