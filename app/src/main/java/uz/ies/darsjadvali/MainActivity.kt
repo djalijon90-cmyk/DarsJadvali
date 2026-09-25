@@ -289,26 +289,15 @@ class MainActivity : AppCompatActivity() {
             } catch (_: Exception) {
             }
         }
-        @JavascriptInterface
+@JavascriptInterface
 fun testRingtone() {
     try {
-        val prefs = getSharedPreferences("dars_settings", MODE_PRIVATE)
-        val savedUri = prefs.getString("ringtone_uri", null)
-
-        val uri = if (savedUri != null) {
-            Uri.parse(savedUri)
-        } else {
-            android.media.RingtoneManager.getDefaultUri(
-                android.media.RingtoneManager.TYPE_ALARM
-            )
-        }
-
-        val ringtone = android.media.RingtoneManager.getRingtone(
+        val player = android.media.MediaPlayer.create(
             this@MainActivity,
-            uri
+            R.raw.school_bell
         )
-
-        ringtone?.play()
+        player?.setOnCompletionListener { it.release() }
+        player?.start()
     } catch (_: Exception) {
     }
 }
