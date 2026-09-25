@@ -1,3 +1,4 @@
+
 <!doctype html><html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Mening dars jadvalim</title><style>
 :root{--bg:#eef4fb;--card:#fff;--ink:#15243a;--muted:#64748b;--line:#dbe5f0;--blue:#1769e0;--blue2:#0b4faf;--soft:#eaf3ff;--danger:#d83a3a;--shadow:0 12px 34px rgba(31,61,99,.12)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:linear-gradient(145deg,#eaf3ff 0,#f8fbff 42%,#eef4fb 100%);color:var(--ink);min-height:100vh}
@@ -151,7 +152,17 @@ function renderMonth(){let now=new Date(),v=$('monthSel').value||`${now.getFullY
 function renderAll(){renderToday();renderWeek();renderMonth();let name=localStorage.getItem('dj_teacher')||'';$('teacherName').value=name;$('teacherHead').textContent=name||'O‘qituvchi dars yordamchisi'}
 async function tone(){stopTone();let vol=+($('volume').value||1),type=$('tone').value;if(type==='custom'){try{let blob=await getCustomRingtone();if(!blob){alert('Avval telefondan rington/audio fayl tanlang.');return}let url=URL.createObjectURL(blob);customAudio=new Audio(url);customAudio.volume=vol;customAudio.onended=()=>{URL.revokeObjectURL(url);customAudio=null};await customAudio.play();return}catch(e){alert('Tanlangan ringtonni ijro qilib bo‘lmadi.');return}}audioCtx=new (window.AudioContext||window.webkitAudioContext)();let seq=type==='1'?[[660,0,.35],[880,.42,.35]]:type==='2'?[[700,0,.25],[700,.32,.25],[900,.64,.45]]:[[520,0,.45],[780,.5,.45],[1040,1,.6]];seq.forEach(([f,st,d])=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=Math.min(1,vol*.75);o.connect(g).connect(audioCtx.destination);o.start(audioCtx.currentTime+st);o.stop(audioCtx.currentTime+st+d);oscillators.push(o)})}
 function stopTone(){if(customAudio){try{customAudio.pause();customAudio.currentTime=0}catch{}customAudio=null}oscillators.forEach(o=>{try{o.stop()}catch{}});oscillators=[];if(audioCtx){try{audioCtx.close()}catch{}audioCtx=null}}
-function checkAlerts(){let now=new Date(),dn=dayName(now),before=+(localStorage.getItem('dj_before')||10);activeLessons(dn).forEach(x=>{let [h,m]=x.start.split(':').map(Number),t=new Date(now);t.setHours(h,m,0,0);let diff=Math.round((t-now)/60000),key=now.toDateString()+x.n;if((diff===before||diff===0)&&!alerted[key+'-'+diff]){alerted[key+'-'+diff]=1;let msg=diff===0?`${x.cls} — ${x.subject} darsi boshlandi!`:`${x.cls} — ${x.subject} darsiga ${before} daqiqa qoldi.`;if(Notification.permission==='granted')new Notification('Dars jadvali',{body:msg});tone();}})}
+function isAndroidApp(){return !!(window.AndroidApp&&typeof window.AndroidApp.scheduleAlarm==='function')}
+function scheduleAndroidLessons(){
+ if(!isAndroidApp())return false;
+ let before=+(localStorage.getItem('dj_before')||10),dn=dayName(new Date());
+ activeLessons(dn).forEach(x=>{let [h,m]=x.start.split(':').map(Number);
+  AndroidApp.scheduleAlarm(JSON.stringify({hour:h,minute:m,before:before,title:'Dars eslatmasi',text:`${x.cls} — ${x.subject} darsiga ${before} daqiqa qoldi.`}));
+  AndroidApp.scheduleAlarm(JSON.stringify({hour:h,minute:m,before:0,title:'Dars boshlandi',text:`${x.cls} — ${x.subject} darsi boshlandi!`}));
+ });
+ return true;
+}
+function checkAlerts(){let now=new Date(),dn=dayName(now),before=+(localStorage.getItem('dj_before')||10);activeLessons(dn).forEach(x=>{let [h,m]=x.start.split(':').map(Number),t=new Date(now);t.setHours(h,m,0,0);let diff=Math.round((t-now)/60000),key=now.toDateString()+x.n;if((diff===before||diff===0)&&!alerted[key+'-'+diff]){alerted[key+'-'+diff]=1;let msg=diff===0?`${x.cls} — ${x.subject} darsi boshlandi!`:`${x.cls} — ${x.subject} darsiga ${before} daqiqa qoldi.`;if(!isAndroidApp()&&'Notification'in window&&Notification.permission==='granted')new Notification('Dars jadvali',{body:msg});tone();}})}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active')});
 
 
@@ -170,7 +181,7 @@ $('restore').onclick=()=>{$('excelFile').click()};
 function excelTime(v){if(v==null||v==='')return '';if(typeof v==='number'){let mins=Math.round((v%1)*1440),hh=Math.floor(mins/60)%24,mm=mins%60;return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')}let s=String(v).trim();let m=s.match(/(\d{1,2}):(\d{2})/);return m?String(+m[1]).padStart(2,'0')+':'+m[2]:s}
 $('excelFile').onchange=async e=>{let f=e.target.files&&e.target.files[0];if(!f)return;try{if(typeof XLSX==='undefined'){alert('Excel o‘qish kutubxonasi yuklanmadi. Internetni yoqib faylni qayta ochib ko‘ring.');return}let buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});let starts=[0,6,12,18,24,30];let imported={};DAYS.forEach((d,di)=>{let c=starts[di],arr=[];for(let r=3;r<=9;r++){let n=a[r]?.[c]??(r-2),cls=a[r]?.[c+1]??'',subject=a[r]?.[c+2]??'',st=excelTime(a[r]?.[c+3]),en=excelTime(a[r]?.[c+4]),br=a[r]?.[c+5]??'';arr.push({n:Number(n)||r-2,cls:String(cls||''),subject:String(subject||''),start:st,end:en,break:String(br||'')})}imported[d]=arr});schedule=imported;localStorage.setItem('dj_schedule',JSON.stringify(schedule));localStorage.setItem('dj_excel_name',f.name);$('excelFileName').textContent='Saqlangan Excel jadvali: '+f.name;renderAll();alert('Excel fayldagi dars jadvali yuklandi va saqlandi. Bo‘sh sinf/fan kataklari dars yo‘q deb qabul qilinadi.')}catch(err){alert('Excel faylini o‘qishda xatolik yuz berdi. Fayl siz tayyorlagan dars jadvali shaklida ekanini tekshiring.')}finally{e.target.value=''}};
 let savedExcelName=localStorage.getItem('dj_excel_name');if(savedExcelName)$('excelFileName').textContent='Saqlangan Excel jadvali: '+savedExcelName;
-$('enableAlerts').onclick=async()=>{if('Notification'in window){let p=await Notification.requestPermission();alert(p==='granted'?'Bildirishnomalar yoqildi.':'Bildirishnomaga ruxsat berilmadi.')}else alert('Bu brauzer bildirishnomani qo‘llamaydi.')};$('testAlarm').onclick=tone;$('stopAlarm').onclick=stopTone;
+$('enableAlerts').onclick=async()=>{if(scheduleAndroidLessons()){alert('Android eslatmalari yoqildi. Bugungi darslar uchun signal rejalashtirildi.');return;}if('Notification'in window){let p=await Notification.requestPermission();alert(p==='granted'?'Bildirishnomalar yoqildi.':'Bildirishnomaga ruxsat berilmadi.')}else alert('Bildirishnoma qo‘llab-quvvatlanmadi.')};$('testAlarm').onclick=tone;$('stopAlarm').onclick=stopTone;
 $('ringtoneFile').onchange=async e=>{let f=e.target.files&&e.target.files[0];if(f){await saveCustomRingtone(f);alert('Rington saqlandi va tanlandi.')}};
 $('clearCustomTone').onclick=async()=>{if(confirm('Saqlangan telefon ringtonini o‘chirasizmi?')){await clearCustomRingtone();alert('Tanlangan rington o‘chirildi.')}};
 $('testSettingsTone').onclick=tone;
@@ -206,7 +217,7 @@ if($('resetExtraHolidaysVisible'))$('resetExtraHolidaysVisible').onclick=()=>{
 
 
 $('headerSettings').onclick=()=>document.querySelector('.tabs button[data-tab="settings"]').click();
-$('headerBell').onclick=async()=>{if('Notification'in window){let p=await Notification.requestPermission();alert(p==='granted'?'Eslatmalar yoqildi.':'Bildirishnomaga ruxsat berilmadi.')}else alert('Bu brauzer bildirishnomani qo‘llamaydi.')};
+$('headerBell').onclick=async()=>{if(scheduleAndroidLessons()){alert('Android eslatmalari yoqildi. Bugungi darslar uchun signal rejalashtirildi.');return;}if('Notification'in window){let p=await Notification.requestPermission();alert(p==='granted'?'Eslatmalar yoqildi.':'Bildirishnomaga ruxsat berilmadi.')}else alert('Bildirishnoma qo‘llab-quvvatlanmadi.')};
 
 const todayQuick=document.querySelector('.quick[data-go="today"]');
 if(todayQuick)todayQuick.onclick=()=>{document.getElementById('todayLessonsCard')?.scrollIntoView({behavior:'smooth',block:'start'})};
