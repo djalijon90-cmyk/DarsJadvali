@@ -289,5 +289,28 @@ class MainActivity : AppCompatActivity() {
             } catch (_: Exception) {
             }
         }
+        @JavascriptInterface
+fun testRingtone() {
+    try {
+        val prefs = getSharedPreferences("dars_settings", MODE_PRIVATE)
+        val savedUri = prefs.getString("ringtone_uri", null)
+
+        val uri = if (savedUri != null) {
+            Uri.parse(savedUri)
+        } else {
+            android.media.RingtoneManager.getDefaultUri(
+                android.media.RingtoneManager.TYPE_ALARM
+            )
+        }
+
+        val ringtone = android.media.RingtoneManager.getRingtone(
+            this@MainActivity,
+            uri
+        )
+
+        ringtone?.play()
+    } catch (_: Exception) {
+    }
+}
     }
 }
