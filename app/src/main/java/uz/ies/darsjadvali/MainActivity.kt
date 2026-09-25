@@ -1,4 +1,4 @@
-\
+
 package uz.ies.darsjadvali
 
 import android.Manifest
